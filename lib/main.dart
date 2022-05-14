@@ -25,6 +25,14 @@ class CardsGame extends FlameGame
   static late final Vector2 cardSize;
   static late final Vector2 buttonSize;
 
+  List<CardDetail> allCards = [];
+
+  late List<Pile> piles;
+
+  static const int minHeightToAttachCardToPile = 70;
+
+  num gapInVerticalCards = 40;
+
   Vector2 positionForStockCards() => Vector2(cardGap, cardGap);
 
   Vector2 positionForWasteCards() => Vector2(cardGap * 2 + cardWidth, cardGap);
@@ -43,7 +51,7 @@ class CardsGame extends FlameGame
       ..position = positionForStockCards();
     final waste = Waste()
       ..size = cardSize
-      ..position = Vector2(cardGap * 2 + cardWidth, cardGap);
+      ..position = positionForWasteCards();
     final foundations = List.generate(
       4,
       (index) => Foundation()
@@ -52,13 +60,14 @@ class CardsGame extends FlameGame
             Vector2((index + 3) * (cardWidth + cardGap) + cardGap, cardGap),
     );
 
-    final piles = List.generate(
+    piles = List.generate(
       7,
       (i) => Pile()
+        ..pileNumber = i
         ..size = cardSize
         ..position = Vector2(
           cardGap + i * (cardWidth + cardGap),
-          cardHeight + 2 * cardGap,
+          cardHeight + 3 * cardGap,
         ),
     );
 
@@ -68,64 +77,90 @@ class CardsGame extends FlameGame
     add(waste);
 
     _addButtonToRefillStock();
+    _generateCards();
     addAllCardsToStockById();
     _addTopCardToStock();
   }
 
-  List<CardType> stock = [];
-  List<CardType> waste = [];
-  List<Cards> wasteCards = [];
+  List<CardDetail> stock = [];
+  List<Cards> waste = [];
 
-  void addAllCardsToStockById() {
+  void _generateCards() {
     for (int suit = 0; suit < 4; suit++) {
       for (int rank = 1; rank <= 13; rank++) {
-        stock.add(
-          CardType()
-            ..suit = suit
-            ..rank = rank,
-        );
+        CardDetail card = CardDetail(rank, suit);
+        allCards.add(card);
       }
+    }
+  }
+
+  void addAllCardsToStockById() {
+    for (var card in allCards) {
+      stock.add(card);
     }
     stock.shuffle();
   }
 
-  void moveFromStockToWaste(CardType cardDetails, Cards card) {
+  void moveFromStockToWaste(Cards card) {
     card.position = positionForWasteCards();
     card.onTap = null;
     card.isDraggable = true;
+    card.attachToPile = () {
+      Pile? pile = canAttachToPile(card);
+      if (pile != null) {
+        attachToPile(pile, card);
+      } else {
+        if (waste.contains(card)) {
+          card.position = positionForWasteCards();
+        } else {
+          // move to its last pile
+          for (var pile in piles) {
+            if (pile.cards.contains(card)) {
+              attachToPile(pile, card);
+              break;
+            }
+          }
+        }
+      }
+    };
     card.setFaceUp(true);
     stock.removeLast();
-    waste.add(cardDetails);
-    wasteCards.add(card);
+    waste.add(card);
     _addTopCardToStock();
   }
 
-  void _addTopCardToStock() {
+  void _addTopCardToStock({bool addToo = true}) {
     if (stock.isNotEmpty) {
-      CardType cardDetails = stock.last;
+      CardDetail cardDetail = stock.last;
 
       Cards card =
-          Cards(cardDetails.rank, cardDetails.suit, positionForStockCards());
+          Cards(cardDetail.rank, cardDetail.suit, positionForStockCards());
+      card.position = positionForStockCards();
       card.setFaceUp(false);
       card.isDraggable = false;
       card.onTap = () {
-        moveFromStockToWaste(cardDetails, card);
+        moveFromStockToWaste(card);
       };
 
-      add(card);
+      if (addToo) {
+        add(card);
+      }
     }
   }
 
   void _moveCardsBackToStock() {
-    print("_moveCardsBackToStock");
-    for (var cardDetail in waste.reversed) {
-      stock.add(cardDetail);
+    print("_moveCardsBackToStock ${stock.length}");
+    reorderChildren();
+    for (var card in waste.reversed) {
+      stock.add(CardDetail(card.rank.value, card.suit.value));
     }
-    waste = [];
-    for (var element in wasteCards) {
+    for (var element in waste) {
       element.removeFromParent();
     }
-    _addTopCardToStock();
+    waste = [];
+    Future.delayed(Duration(milliseconds: 100), () {
+      _addTopCardToStock();
+    });
   }
 
   void _addButtonToRefillStock() {
@@ -141,10 +176,73 @@ class CardsGame extends FlameGame
       ),
     );
   }
+
+  Pile? canAttachToPile(Cards card) {
+    Pile? nearestPile;
+
+    double x1 = card.x;
+    double y1 = card.y;
+
+    for (Pile pile in piles) {
+      nearestPile ??= pile;
+      double nearestDifference = abs(nearestPile.x - x1);
+      double currentDifference = abs(pile.x - x1);
+
+      if (nearestDifference > currentDifference) {
+        nearestPile = pile;
+      }
+    }
+
+    // Check for y
+    if (nearestPile != null) {
+      double verticalDiff = 0;
+      if (nearestPile.cards.isNotEmpty) {
+        verticalDiff = abs(nearestPile.cards.last.y - y1);
+      } else {
+        verticalDiff = abs((nearestPile.position.y) - y1);
+      }
+      if (verticalDiff > minHeightToAttachCardToPile) {
+        return null;
+      }
+    }
+
+    print("nearestPile == ${nearestPile.toString()}");
+    return nearestPile;
+  }
+
+  abs(double value) {
+    if (value < 0) return -value;
+    return value;
+  }
+
+  void attachToPile(Pile pile, Cards card) {
+    int length = pile.cards.length;
+    if (pile.cards.contains(card)) {
+      // From same pile
+      length = length - 1;
+    }
+    removeCardFromItsParentHolder(card);
+    card.position = Vector2(
+        pile.position.x, pile.position.y + (length * gapInVerticalCards));
+
+    if (pile.cards.isNotEmpty) {
+      pile.cards.last.isDraggable = false;
+    }
+    pile.cards.add(card);
+  }
+
+  void removeCardFromItsParentHolder(Cards card) {
+    waste.remove(card);
+    for (var pile in piles) {
+      pile.cards.remove(card);
+    }
+  }
 }
 
-class CardType {
+class CardDetail {
   int suit = 0, rank = 0;
+
+  CardDetail(this.rank, this.suit);
 
   @override
   String toString() {

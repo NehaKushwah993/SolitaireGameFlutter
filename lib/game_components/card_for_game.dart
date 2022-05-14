@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:flame/components.dart';
-import 'package:flame/experimental.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/input.dart';
 import 'package:flutter/material.dart' hide Draggable;
@@ -17,9 +16,10 @@ class Cards extends PositionComponent with Draggable, Tappable {
   var isDraggable;
 
   Function? onTap;
+  Function? attachToPile;
 
   Cards(int intRank, int intSuit, Vector2 position,
-      {this.isDraggable = true, this.onTap})
+      {this.isDraggable = true, this.onTap, this.attachToPile})
       : rank = Rank.fromInt(intRank),
         suit = Suit.fromInt(intSuit),
         _faceUp = false,
@@ -191,7 +191,8 @@ class Cards extends PositionComponent with Draggable, Tappable {
     canvas.drawRRect(cardRect, backBackgroundPaint);
     canvas.drawRRect(cardRect, backBorderPaint1);
     canvas.drawRRect(innerRect, backBorderPaint2);
-    flameSprite.render(canvas, position: size / 2, anchor: Anchor.center, size: Vector2(10, 10));
+    flameSprite.render(canvas,
+        position: size / 2, anchor: Anchor.center, size: Vector2(10, 10));
   }
 
   void _drawSprite(
@@ -243,6 +244,7 @@ class Cards extends PositionComponent with Draggable, Tappable {
     if (!isDraggable) return true;
     priority = 0;
     dragDeltaPosition = null;
+    attachToPile?.call();
     return false;
   }
 
@@ -251,6 +253,7 @@ class Cards extends PositionComponent with Draggable, Tappable {
     if (!isDraggable) return true;
     priority = 0;
     dragDeltaPosition = null;
+    attachToPile?.call();
     return false;
   }
 
