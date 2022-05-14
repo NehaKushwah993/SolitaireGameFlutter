@@ -2,11 +2,10 @@ import 'dart:math';
 
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
-import 'package:flame_game/main.dart';
-import 'package:flame_game/suit.dart';
 import 'package:flutter/cupertino.dart';
+import '../main.dart';
 
-import 'rank.dart';
+import 'components.dart';
 
 class Cards extends PositionComponent {
   Cards(int intRank, int intSuit)

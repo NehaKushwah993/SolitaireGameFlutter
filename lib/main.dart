@@ -5,13 +5,10 @@ import 'package:flame/experimental.dart';
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 import 'package:flame/particles.dart';
-import 'package:flame_game/card_for_game.dart';
-import 'package:flame_game/foundation.dart';
-import 'package:flame_game/pile.dart';
-import 'package:flame_game/stock.dart';
 import 'package:flutter/material.dart';
 
-import 'waste.dart';
+import 'components/components.dart';
+import 'components/waste.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

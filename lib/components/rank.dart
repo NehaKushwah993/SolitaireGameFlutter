@@ -2,7 +2,7 @@ import 'package:flame/components.dart';
 import 'package:flame/flame.dart';
 import 'package:flutter/foundation.dart';
 
-import 'main.dart';
+import '../main.dart';
 
 @immutable
 class Rank {

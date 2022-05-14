@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
-import 'package:flame_game/main.dart';
 import 'package:flutter/cupertino.dart';
+
+import '../main.dart';
 
 @immutable
 class Suit {
