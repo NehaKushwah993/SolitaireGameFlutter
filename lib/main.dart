@@ -4,10 +4,8 @@ import 'package:flame/components.dart';
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
-import 'package:flame/particles.dart';
 import 'package:flutter/material.dart';
 
-import 'game_components/button.dart';
 import 'game_components/game_components.dart';
 
 void main() {
@@ -94,6 +92,7 @@ class CardsGame extends FlameGame
   void moveFromStockToWaste(CardType cardDetails, Cards card) {
     card.position = positionForWasteCards();
     card.onTap = null;
+    card.isDraggable = true;
     card.setFaceUp(true);
     stock.removeLast();
     waste.add(cardDetails);
@@ -108,6 +107,7 @@ class CardsGame extends FlameGame
       Cards card =
           Cards(cardDetails.rank, cardDetails.suit, positionForStockCards());
       card.setFaceUp(false);
+      card.isDraggable = false;
       card.onTap = () {
         moveFromStockToWaste(cardDetails, card);
       };
@@ -131,7 +131,7 @@ class CardsGame extends FlameGame
   void _addButtonToRefillStock() {
     add(
       ButtonComponent(
-        button: ButtonRefill(),
+        button: RefillButton(),
         size: Vector2(30, 30),
         onPressed: () {
           _moveCardsBackToStock();

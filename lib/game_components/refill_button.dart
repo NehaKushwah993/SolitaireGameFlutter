@@ -8,11 +8,11 @@ import 'package:flutter/material.dart' hide Draggable;
 import '../main.dart';
 import 'game_components.dart';
 
-class ButtonRefill extends PositionComponent {
+class RefillButton extends PositionComponent {
   @override
   bool debugMode = true;
 
-  ButtonRefill() : super();
+  RefillButton() : super();
 
   @override
   void render(Canvas canvas) {
