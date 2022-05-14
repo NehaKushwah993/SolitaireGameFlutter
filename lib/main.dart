@@ -1,14 +1,14 @@
 import 'dart:async';
-import 'dart:math';
 
-import 'package:flame/experimental.dart';
+import 'package:flame/components.dart';
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
+import 'package:flame/input.dart';
 import 'package:flame/particles.dart';
 import 'package:flutter/material.dart';
 
-import 'components/components.dart';
-import 'components/waste.dart';
+import 'game_components/button.dart';
+import 'game_components/game_components.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,20 +18,31 @@ void main() {
   runApp(GameWidget(game: CardsGame()));
 }
 
-class CardsGame extends FlameGame {
-  static const double cardWidth = 1000;
-  static const double cardHeight = 1400;
-  static const double cardGap = 175;
-  static const double cardRadius = 100;
-  static final Vector2 cardSize = Vector2(cardWidth, cardHeight);
+class CardsGame extends FlameGame
+    with HasDraggables, HasCollisionDetection, HasTappables {
+  static double cardWidth = 90;
+  static double cardHeight = 160;
+  static double cardGap = 15;
+  static double cardRadius = 5;
+  static late final Vector2 cardSize;
+  static late final Vector2 buttonSize;
+
+  Vector2 positionForStockCards() => Vector2(cardGap, cardGap);
+
+  Vector2 positionForWasteCards() => Vector2(cardGap * 2 + cardWidth, cardGap);
 
   @override
   Future<void>? onLoad() async {
+    cardWidth = size.toRect().size.height * .2;
+    cardHeight = cardWidth / 0.71;
+    cardSize = Vector2(cardWidth, cardHeight);
+    buttonSize = Vector2(30, 30);
+
     await Flame.images.load('cards-sprites.png');
 
     final stock = Stock()
       ..size = cardSize
-      ..position = Vector2(cardGap, cardGap);
+      ..position = positionForStockCards();
     final waste = Waste()
       ..size = cardSize
       ..position = Vector2(cardGap * 2 + cardWidth, cardGap);
@@ -52,34 +63,92 @@ class CardsGame extends FlameGame {
           cardHeight + 2 * cardGap,
         ),
     );
-    final world = World()
-      ..add(stock)
-      ..addAll(piles)
-      ..addAll(foundations)
-      ..add(waste);
 
-    final random = Random();
+    add(stock);
+    addAll(piles);
+    addAll(foundations);
+    add(waste);
 
-    for (var i = 0; i < 7; i++) {
-      for (var j = 0; j < 4; j++) {
-        final card = Cards(random.nextInt(13) + 1, random.nextInt(4))
-          ..position = Vector2(100 + i * 1150, 100 + j * 1500)
-          ..addToParent(world);
-        if (random.nextDouble() < 0.9) {
-          // flip face up with 90% probability
-          card.flip();
-        }
+    _addButtonToRefillStock();
+    addAllCardsToStockById();
+    _addTopCardToStock();
+  }
+
+  List<CardType> stock = [];
+  List<CardType> waste = [];
+  List<Cards> wasteCards = [];
+
+  void addAllCardsToStockById() {
+    for (int suit = 0; suit < 4; suit++) {
+      for (int rank = 1; rank <= 13; rank++) {
+        stock.add(
+          CardType()
+            ..suit = suit
+            ..rank = rank,
+        );
       }
     }
+    stock.shuffle();
+  }
 
-    add(world);
+  void moveFromStockToWaste(CardType cardDetails, Cards card) {
+    card.position = positionForWasteCards();
+    card.onTap = null;
+    card.setFaceUp(true);
+    stock.removeLast();
+    waste.add(cardDetails);
+    wasteCards.add(card);
+    _addTopCardToStock();
+  }
 
-    final camera = CameraComponent(world: world)
-      ..viewfinder.visibleGameSize =
-          Vector2(cardWidth * 7 + cardGap * 8, 4 * cardHeight + 3 * cardGap)
-      ..viewfinder.position = Vector2((cardWidth * 7 + cardGap * 8) / 2, 0)
-      ..viewfinder.anchor = Anchor.topCenter;
-    add(camera);
+  void _addTopCardToStock() {
+    if (stock.isNotEmpty) {
+      CardType cardDetails = stock.last;
+
+      Cards card =
+          Cards(cardDetails.rank, cardDetails.suit, positionForStockCards());
+      card.setFaceUp(false);
+      card.onTap = () {
+        moveFromStockToWaste(cardDetails, card);
+      };
+
+      add(card);
+    }
+  }
+
+  void _moveCardsBackToStock() {
+    print("_moveCardsBackToStock");
+    for (var cardDetail in waste.reversed) {
+      stock.add(cardDetail);
+    }
+    waste = [];
+    for (var element in wasteCards) {
+      element.removeFromParent();
+    }
+    _addTopCardToStock();
+  }
+
+  void _addButtonToRefillStock() {
+    add(
+      ButtonComponent(
+        button: ButtonRefill(),
+        size: Vector2(30, 30),
+        onPressed: () {
+          _moveCardsBackToStock();
+        },
+        position: Vector2(positionForWasteCards().x + cardWidth + cardGap,
+            positionForWasteCards().y),
+      ),
+    );
+  }
+}
+
+class CardType {
+  int suit = 0, rank = 0;
+
+  @override
+  String toString() {
+    return "-" + suit.toString() + "-" + rank.toString();
   }
 }
 

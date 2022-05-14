@@ -1,18 +1,29 @@
 import 'dart:math';
 
 import 'package:flame/components.dart';
+import 'package:flame/experimental.dart';
 import 'package:flame/extensions.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flame/input.dart';
+import 'package:flutter/material.dart' hide Draggable;
 import '../main.dart';
+import 'game_components.dart';
 
-import 'components.dart';
+class Cards extends PositionComponent with Draggable, Tappable {
+  Vector2? dragDeltaPosition;
 
-class Cards extends PositionComponent {
-  Cards(int intRank, int intSuit)
+  @override
+  bool debugMode = true;
+
+  var isDraggable;
+
+  Function? onTap;
+
+  Cards(int intRank, int intSuit, Vector2 position,
+      {this.isDraggable = true, this.onTap})
       : rank = Rank.fromInt(intRank),
         suit = Suit.fromInt(intSuit),
         _faceUp = false,
-        super(size: CardsGame.cardSize);
+        super(size: CardsGame.cardSize, position: position);
 
   final Rank rank;
   final Suit suit;
@@ -21,6 +32,8 @@ class Cards extends PositionComponent {
   bool get isFaceUp => _faceUp;
 
   void flip() => _faceUp = !_faceUp;
+
+  void setFaceUp(bool faceUp) => _faceUp = faceUp;
 
   @override
   String toString() => rank.label + suit.label; // e.g. "Q♠" or "10♦"
@@ -35,29 +48,29 @@ class Cards extends PositionComponent {
   }
 
   static final RRect cardRect = RRect.fromRectAndRadius(
-      CardsGame.cardSize.toRect(), const Radius.circular(CardsGame.cardRadius));
-  static final RRect innerRect = cardRect.deflate(40);
+      CardsGame.cardSize.toRect(), Radius.circular(CardsGame.cardRadius));
+  static final RRect innerRect = cardRect.deflate(12);
   static final Paint backBackgroundPaint = Paint()
     ..color = const Color(0xff380c02);
   static final Paint backBorderPaint1 = Paint()
     ..color = const Color(0xffdbaf58)
     ..style = PaintingStyle.stroke
-    ..strokeWidth = 10;
+    ..strokeWidth = 2;
   static final Paint backBorderPaint2 = Paint()
     ..color = const Color(0x5CEF971B)
     ..style = PaintingStyle.stroke
-    ..strokeWidth = 35;
+    ..strokeWidth = 3;
   static late final Sprite flameSprite = cardsSprite(1367, 6, 357, 501);
   static final Paint frontBackgroundPaint = Paint()
     ..color = const Color(0xff000000);
   static final Paint redBorderPaint = Paint()
     ..color = const Color(0xffece8a3)
     ..style = PaintingStyle.stroke
-    ..strokeWidth = 10;
+    ..strokeWidth = 2;
   static final Paint blackBorderPaint = Paint()
     ..color = const Color(0xff7ab2e8)
     ..style = PaintingStyle.stroke
-    ..strokeWidth = 10;
+    ..strokeWidth = 2;
   static late final Sprite redJack = cardsSprite(81, 565, 562, 488);
   static late final Sprite redQueen = cardsSprite(717, 541, 486, 515);
   static late final Sprite redKing = cardsSprite(1305, 532, 407, 549);
@@ -178,7 +191,7 @@ class Cards extends PositionComponent {
     canvas.drawRRect(cardRect, backBackgroundPaint);
     canvas.drawRRect(cardRect, backBorderPaint1);
     canvas.drawRRect(innerRect, backBorderPaint2);
-    flameSprite.render(canvas, position: size / 2, anchor: Anchor.center);
+    flameSprite.render(canvas, position: size / 2, anchor: Anchor.center, size: Vector2(10, 10));
   }
 
   void _drawSprite(
@@ -199,10 +212,69 @@ class Cards extends PositionComponent {
       canvas,
       position: Vector2(relativeX * size.x, relativeY * size.y),
       anchor: Anchor.center,
-      size: sprite.srcSize.scaled(scale),
+      size: sprite.srcSize.scaled(0.1),
     );
     if (rotate) {
       canvas.restore();
     }
+  }
+
+  @override
+  bool onDragStart(DragStartInfo info) {
+    if (!isDraggable) return true;
+    priority = 1000;
+    dragDeltaPosition = info.eventPosition.game - position;
+    return false;
+  }
+
+  @override
+  bool onDragUpdate(DragUpdateInfo event) {
+    if (!isDraggable) return true;
+    final dragDeltaPosition = this.dragDeltaPosition;
+    if (dragDeltaPosition == null) {
+      return false;
+    }
+    position.setFrom(event.eventPosition.game - dragDeltaPosition);
+    return false;
+  }
+
+  @override
+  bool onDragEnd(_) {
+    if (!isDraggable) return true;
+    priority = 0;
+    dragDeltaPosition = null;
+    return false;
+  }
+
+  @override
+  bool onDragCancel() {
+    if (!isDraggable) return true;
+    priority = 0;
+    dragDeltaPosition = null;
+    return false;
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    debugColor = isDragged ? Colors.greenAccent : Colors.purple;
+  }
+
+  @override
+  bool onTapUp(TapUpInfo info) {
+    return true;
+  }
+
+  @override
+  bool onTapDown(TapDownInfo details) {
+    print("onTapDown" + toString());
+    onTap?.call();
+    return false;
+  }
+
+  @override
+  bool onTapCancel() {
+    print("onTapDown" + toString());
+    return false;
   }
 }
