@@ -158,7 +158,7 @@ class CardsGame extends FlameGame
       element.removeFromParent();
     }
     waste = [];
-    Future.delayed(Duration(milliseconds: 100), () {
+    Future.delayed(const Duration(milliseconds: 100), () {
       _addTopCardToStock();
     });
   }
@@ -205,6 +205,9 @@ class CardsGame extends FlameGame
         return null;
       }
     }
+    if (!_canBeAttachedToPileBySequence(nearestPile!, card)) {
+      return null;
+    }
 
     print("nearestPile == ${nearestPile.toString()}");
     return nearestPile;
@@ -229,6 +232,12 @@ class CardsGame extends FlameGame
       pile.cards.last.isDraggable = false;
     }
     pile.cards.add(card);
+    // Make last cards draggable
+    for (var pile in piles) {
+      if (pile.cards.isNotEmpty) {
+        pile.cards.last.isDraggable = true;
+      }
+    }
   }
 
   void removeCardFromItsParentHolder(Cards card) {
@@ -236,6 +245,18 @@ class CardsGame extends FlameGame
     for (var pile in piles) {
       pile.cards.remove(card);
     }
+  }
+
+  bool _canBeAttachedToPileBySequence(Pile nearestPile, Cards card) {
+    if (nearestPile.cards.isEmpty) return true;
+
+    if (nearestPile.cards.last.suit.isBlack != card.suit.isBlack) {
+      if (nearestPile.cards.last.rank.value - card.rank.value == 1) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }
 
