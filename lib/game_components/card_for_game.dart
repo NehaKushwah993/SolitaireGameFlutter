@@ -9,6 +9,8 @@ import 'game_components.dart';
 
 class Cards extends PositionComponent with Draggable, Tappable {
   Vector2? dragDeltaPosition;
+  List<Vector2?> dragDeltaPositions = [];
+  List<Cards> otherCards = [];
 
   @override
   bool debugMode = true;
@@ -18,9 +20,17 @@ class Cards extends PositionComponent with Draggable, Tappable {
   Function? onTap;
   Function? attachToPile;
 
-  Cards(int intRank, int intSuit, Vector2 position,
-      {this.isDraggable = true, this.onTap, this.attachToPile})
-      : rank = Rank.fromInt(intRank),
+  Function? onCardDragStart;
+
+  Cards(
+    int intRank,
+    int intSuit,
+    Vector2 position, {
+    this.isDraggable = true,
+    this.onTap,
+    this.attachToPile,
+    this.onCardDragStart,
+  })  : rank = Rank.fromInt(intRank),
         suit = Suit.fromInt(intSuit),
         _faceUp = false,
         super(size: CardsGame.cardSize, position: position);
@@ -223,8 +233,16 @@ class Cards extends PositionComponent with Draggable, Tappable {
   @override
   bool onDragStart(DragStartInfo info) {
     if (!isDraggable) return true;
-    priority = 1000;
+    onCardDragStart?.call();
+    int p = 100;
+    priority = p;
+    for (var element in otherCards) {
+      element.priority = ++p;
+    }
     dragDeltaPosition = info.eventPosition.game - position;
+    otherCards.forEach((element) {
+      dragDeltaPositions.add(info.eventPosition.game - element.position);
+    });
     return false;
   }
 
@@ -235,7 +253,14 @@ class Cards extends PositionComponent with Draggable, Tappable {
     if (dragDeltaPosition == null) {
       return false;
     }
+
     position.setFrom(event.eventPosition.game - dragDeltaPosition);
+    for (int i = 0; i < otherCards.length; i++) {
+      otherCards[i]
+          .position
+          .setFrom(event.eventPosition.game - dragDeltaPositions[i]!);
+    }
+
     return false;
   }
 
@@ -243,7 +268,11 @@ class Cards extends PositionComponent with Draggable, Tappable {
   bool onDragEnd(_) {
     if (!isDraggable) return true;
     priority = 0;
+    for (var element in otherCards) {
+      element.priority = 0;
+    }
     dragDeltaPosition = null;
+    dragDeltaPositions.clear();
     attachToPile?.call();
     return false;
   }
@@ -252,6 +281,9 @@ class Cards extends PositionComponent with Draggable, Tappable {
   bool onDragCancel() {
     if (!isDraggable) return true;
     priority = 0;
+    for (var element in otherCards) {
+      element.priority = 0;
+    }
     dragDeltaPosition = null;
     attachToPile?.call();
     return false;

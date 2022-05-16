@@ -108,7 +108,7 @@ class CardsGame extends FlameGame
     card.attachToPile = () {
       Pile? pile = canAttachToPile(card);
       if (pile != null) {
-        attachToPile(pile, card);
+        attachCardToPile(pile, card);
       } else {
         if (waste.contains(card)) {
           card.position = positionForWasteCards();
@@ -116,7 +116,8 @@ class CardsGame extends FlameGame
           // move to its last pile
           for (var pile in piles) {
             if (pile.cards.contains(card)) {
-              attachToPile(pile, card);
+              attachCardToPile(pile, card);
+
               break;
             }
           }
@@ -218,29 +219,45 @@ class CardsGame extends FlameGame
     return value;
   }
 
-  void attachToPile(Pile pile, Cards card) {
-    int length = pile.cards.length;
-    if (pile.cards.contains(card)) {
-      // From same pile
-      length = length - 1;
-    }
-    removeCardFromItsParentHolder(card);
-    card.position = Vector2(
-        pile.position.x, pile.position.y + (length * gapInVerticalCards));
+  /// This will attach the card and its bottom cards to the pile
+  /// whether its same pile or new pile
+  void attachCardToPile(Pile pile, Cards cardToAdd) {
+    List<Cards> cardsToAdd = [];
+    cardsToAdd.add(cardToAdd);
+    cardsToAdd.addAll(cardToAdd.otherCards);
 
-    if (pile.cards.isNotEmpty) {
-      pile.cards.last.isDraggable = false;
+    int fromLength = pile.cards.length;
+
+    if (pile.cards.contains(cardToAdd)) {
+      // From same pile
+      int indexAtPile = pile.cards.indexOf(cardToAdd);
+      fromLength = indexAtPile;
     }
-    pile.cards.add(card);
-    // Make last cards draggable
-    for (var pile in piles) {
-      if (pile.cards.isNotEmpty) {
-        pile.cards.last.isDraggable = true;
-      }
+
+    for (var card in cardsToAdd) {
+      removeCardFromItsParentListHolder(card);
+      card.position = Vector2(
+          pile.position.x, pile.position.y + (fromLength * gapInVerticalCards));
+
+      card.isDraggable = true;
+      card.onCardDragStart = () {
+        card.otherCards = [];
+        bool found = false;
+        for (var cardInPile in pile.cards) {
+          if (found) {
+            card.otherCards.add(cardInPile);
+          }
+          if (cardInPile == card) {
+            found = true;
+          }
+        }
+      };
+      pile.cards.add(card);
+      fromLength++;
     }
   }
 
-  void removeCardFromItsParentHolder(Cards card) {
+  void removeCardFromItsParentListHolder(Cards card) {
     waste.remove(card);
     for (var pile in piles) {
       pile.cards.remove(card);
