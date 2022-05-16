@@ -24,8 +24,7 @@ class Cards extends PositionComponent with Draggable, Tappable {
 
   Cards(
     int intRank,
-    int intSuit,
-    Vector2 position, {
+    int intSuit, {
     this.isDraggable = true,
     this.onTap,
     this.attachToPile,
@@ -33,7 +32,7 @@ class Cards extends PositionComponent with Draggable, Tappable {
   })  : rank = Rank.fromInt(intRank),
         suit = Suit.fromInt(intSuit),
         _faceUp = false,
-        super(size: CardsGame.cardSize, position: position);
+        super(size: CardsGame.cardSize);
 
   final Rank rank;
   final Suit suit;

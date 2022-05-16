@@ -29,9 +29,9 @@ class CardsGame extends FlameGame
 
   late List<Pile> piles;
 
-  static const int minHeightToAttachCardToPile = 70;
+  static double minHeightToAttachCardToPile = 70;
 
-  num gapInVerticalCards = 40;
+  double gapInVerticalCards = 40;
 
   Vector2 positionForStockCards() => Vector2(cardGap, cardGap);
 
@@ -43,6 +43,7 @@ class CardsGame extends FlameGame
     cardHeight = cardWidth / 0.71;
     cardSize = Vector2(cardWidth, cardHeight);
     buttonSize = Vector2(30, 30);
+    gapInVerticalCards = size.toRect().size.height * .05;
 
     await Flame.images.load('cards-sprites.png');
 
@@ -78,7 +79,7 @@ class CardsGame extends FlameGame
 
     _addButtonToRefillStock();
     _generateCards();
-    addAllCardsToStockById();
+    _attachInitialCards();
     _addTopCardToStock();
   }
 
@@ -94,36 +95,10 @@ class CardsGame extends FlameGame
     }
   }
 
-  void addAllCardsToStockById() {
-    for (var card in allCards) {
-      stock.add(card);
-    }
-    stock.shuffle();
-  }
-
   void moveFromStockToWaste(Cards card) {
     card.position = positionForWasteCards();
     card.onTap = null;
     card.isDraggable = true;
-    card.attachToPile = () {
-      Pile? pile = canAttachToPile(card);
-      if (pile != null) {
-        attachCardToPile(pile, card);
-      } else {
-        if (waste.contains(card)) {
-          card.position = positionForWasteCards();
-        } else {
-          // move to its last pile
-          for (var pile in piles) {
-            if (pile.cards.contains(card)) {
-              attachCardToPile(pile, card);
-
-              break;
-            }
-          }
-        }
-      }
-    };
     card.setFaceUp(true);
     stock.removeLast();
     waste.add(card);
@@ -134,8 +109,7 @@ class CardsGame extends FlameGame
     if (stock.isNotEmpty) {
       CardDetail cardDetail = stock.last;
 
-      Cards card =
-          Cards(cardDetail.rank, cardDetail.suit, positionForStockCards());
+      Cards card = _createCardsByDetail(cardDetail);
       card.position = positionForStockCards();
       card.setFaceUp(false);
       card.isDraggable = false;
@@ -274,6 +248,59 @@ class CardsGame extends FlameGame
     }
 
     return false;
+  }
+
+  void _attachInitialCards() {
+    List<CardDetail> cards = [];
+    cards.addAll(allCards);
+    cards.shuffle();
+
+    //Add cards to the piles
+    for (int pileNumber = 0; pileNumber < piles.length; pileNumber++) {
+      for (int card = 0; card <= pileNumber; card++) {
+        CardDetail cardDetail = cards[0];
+        Cards cardToBeAdded = _createCardsByDetail(cardDetail);
+        cardToBeAdded.setFaceUp(false);
+        cardToBeAdded.isDraggable = true;
+
+        add(cardToBeAdded);
+
+        attachCardToPile(piles[pileNumber], cardToBeAdded);
+        cards.removeAt(0);
+      }
+
+      piles[pileNumber]
+          .cards[piles[pileNumber].cards.length - 1]
+          .setFaceUp(true);
+    }
+
+    //Add remaining cards to stock
+    stock.addAll(cards);
+  }
+
+  Cards _createCardsByDetail(CardDetail cardDetail) {
+    Cards card = Cards(cardDetail.rank, cardDetail.suit);
+
+    card.attachToPile = () {
+      Pile? pile = canAttachToPile(card);
+      if (pile != null) {
+        attachCardToPile(pile, card);
+      } else {
+        if (waste.contains(card)) {
+          card.position = positionForWasteCards();
+        } else {
+          // move to its last pile
+          for (var pile in piles) {
+            if (pile.cards.contains(card)) {
+              attachCardToPile(pile, card);
+              break;
+            }
+          }
+        }
+      }
+    };
+
+    return card;
   }
 }
 
