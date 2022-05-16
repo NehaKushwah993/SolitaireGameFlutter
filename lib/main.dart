@@ -28,6 +28,7 @@ class CardsGame extends FlameGame
   List<CardDetail> allCards = [];
 
   late List<Pile> piles;
+  late List<Foundation> foundations;
 
   static double minHeightToAttachCardToPile = 70;
 
@@ -53,7 +54,7 @@ class CardsGame extends FlameGame
     final waste = Waste()
       ..size = cardSize
       ..position = positionForWasteCards();
-    final foundations = List.generate(
+    foundations = List.generate(
       4,
       (index) => Foundation()
         ..size = cardSize
@@ -188,6 +189,42 @@ class CardsGame extends FlameGame
     return nearestPile;
   }
 
+  Foundation? canAttachToFoundation(Cards card) {
+    Foundation? nearestFoundation;
+
+    double x1 = card.x;
+    double y1 = card.y;
+
+    for (Foundation foundation in foundations) {
+      nearestFoundation ??= foundation;
+      double nearestDifference = abs(nearestFoundation.x - x1);
+      double currentDifference = abs(foundation.x - x1);
+
+      if (nearestDifference > currentDifference) {
+        nearestFoundation = foundation;
+      }
+    }
+
+    // Check for y
+    if (nearestFoundation != null) {
+      double verticalDiff = 0;
+      if (nearestFoundation.cards.isNotEmpty) {
+        verticalDiff = abs(nearestFoundation.cards.last.y - y1);
+      } else {
+        verticalDiff = abs((nearestFoundation.position.y) - y1);
+      }
+      if (verticalDiff > minHeightToAttachCardToPile) {
+        return null;
+      }
+    }
+    if (!_canBeAttachedToFoundationBySequence(nearestFoundation!, card)) {
+      return null;
+    }
+
+    print("nearestFoundation == ${nearestFoundation.toString()}");
+    return nearestFoundation;
+  }
+
   abs(double value) {
     if (value < 0) return -value;
     return value;
@@ -231,6 +268,33 @@ class CardsGame extends FlameGame
     }
   }
 
+  /// This will attach the card and its bottom cards to the pile
+  /// whether its same pile or new pile
+  void attachCardToFoundation(Foundation foundation, Cards cardToAdd) {
+    List<Cards> cardsToAdd = [];
+    cardsToAdd.add(cardToAdd);
+    cardsToAdd.addAll(cardToAdd.otherCards);
+
+    for (var card in cardsToAdd) {
+      removeCardFromItsParentListHolder(card);
+      card.position = Vector2(foundation.position.x, foundation.position.y);
+      card.isDraggable = false;
+      card.onCardDragStart = () {
+        card.otherCards = [];
+        bool found = false;
+        for (var cardInPile in foundation.cards) {
+          if (found) {
+            card.otherCards.add(cardInPile);
+          }
+          if (cardInPile == card) {
+            found = true;
+          }
+        }
+      };
+      foundation.cards.add(card);
+    }
+  }
+
   void removeCardFromItsParentListHolder(Cards card) {
     waste.remove(card);
     for (var pile in piles) {
@@ -243,6 +307,22 @@ class CardsGame extends FlameGame
 
     if (nearestPile.cards.last.suit.isBlack != card.suit.isBlack) {
       if (nearestPile.cards.last.rank.value - card.rank.value == 1) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  bool _canBeAttachedToFoundationBySequence(
+      Foundation nearestFoundation, Cards card) {
+    if (nearestFoundation.cards.isEmpty) {
+      // 'A' cards can be attached
+      return card.rank.value == 1;
+    }
+
+    if (nearestFoundation.cards.last.suit.value == card.suit.value) {
+      if (nearestFoundation.cards.last.rank.value - card.rank.value == -1) {
         return true;
       }
     }
@@ -281,26 +361,45 @@ class CardsGame extends FlameGame
   Cards _createCardsByDetail(CardDetail cardDetail) {
     Cards card = Cards(cardDetail.rank, cardDetail.suit);
 
-    card.attachToPile = () {
+    card.attachToPileOrFoundation = () {
+      //Set by pile
       Pile? pile = canAttachToPile(card);
       if (pile != null) {
         attachCardToPile(pile, card);
+        _faceUpLastCardsOfPiles();
+        return;
+      }
+      //Set by foundation
+      Foundation? foundation = canAttachToFoundation(card);
+      if (foundation != null) {
+        attachCardToFoundation(foundation, card);
+        _faceUpLastCardsOfPiles();
+        return;
+      }
+
+      // Set by waste or move to last pos
+      if (waste.contains(card)) {
+        card.position = positionForWasteCards();
       } else {
-        if (waste.contains(card)) {
-          card.position = positionForWasteCards();
-        } else {
-          // move to its last pile
-          for (var pile in piles) {
-            if (pile.cards.contains(card)) {
-              attachCardToPile(pile, card);
-              break;
-            }
+        // move to its last pile
+        for (var pile in piles) {
+          if (pile.cards.contains(card)) {
+            attachCardToPile(pile, card);
+            break;
           }
         }
       }
     };
 
     return card;
+  }
+
+  _faceUpLastCardsOfPiles() {
+    for (var pile in piles) {
+      if (pile.cards.isNotEmpty) {
+        pile.cards.last.setFaceUp(true);
+      }
+    }
   }
 }
 

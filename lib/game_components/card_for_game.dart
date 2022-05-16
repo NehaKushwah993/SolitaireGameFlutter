@@ -18,7 +18,7 @@ class Cards extends PositionComponent with Draggable, Tappable {
   var isDraggable;
 
   Function? onTap;
-  Function? attachToPile;
+  Function? attachToPileOrFoundation;
 
   Function? onCardDragStart;
 
@@ -27,7 +27,7 @@ class Cards extends PositionComponent with Draggable, Tappable {
     int intSuit, {
     this.isDraggable = true,
     this.onTap,
-    this.attachToPile,
+    this.attachToPileOrFoundation,
     this.onCardDragStart,
   })  : rank = Rank.fromInt(intRank),
         suit = Suit.fromInt(intSuit),
@@ -272,7 +272,7 @@ class Cards extends PositionComponent with Draggable, Tappable {
     }
     dragDeltaPosition = null;
     dragDeltaPositions.clear();
-    attachToPile?.call();
+    attachToPileOrFoundation?.call();
     return false;
   }
 
@@ -284,7 +284,7 @@ class Cards extends PositionComponent with Draggable, Tappable {
       element.priority = 0;
     }
     dragDeltaPosition = null;
-    attachToPile?.call();
+    attachToPileOrFoundation?.call();
     return false;
   }
 
