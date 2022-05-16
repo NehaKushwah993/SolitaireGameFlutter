@@ -44,7 +44,7 @@ class CardsGame extends FlameGame
     cardHeight = cardWidth / 0.71;
     cardSize = Vector2(cardWidth, cardHeight);
     buttonSize = Vector2(30, 30);
-    gapInVerticalCards = size.toRect().size.height * .05;
+    gapInVerticalCards = size.toRect().size.height * .03;
 
     await Flame.images.load('cards-sprites.png');
 
@@ -367,6 +367,7 @@ class CardsGame extends FlameGame
       if (pile != null) {
         attachCardToPile(pile, card);
         _faceUpLastCardsOfPiles();
+        _checkIfWon();
         return;
       }
       //Set by foundation
@@ -374,6 +375,7 @@ class CardsGame extends FlameGame
       if (foundation != null) {
         attachCardToFoundation(foundation, card);
         _faceUpLastCardsOfPiles();
+        _checkIfWon();
         return;
       }
 
@@ -400,6 +402,18 @@ class CardsGame extends FlameGame
         pile.cards.last.setFaceUp(true);
       }
     }
+  }
+
+
+
+  void _checkIfWon() {
+    for (var foundation in foundations) {
+      if(foundation.cards.length != 13){
+        return;
+      }
+    }
+
+    //TODO : Won, show button to restart the game
   }
 }
 
