@@ -14,7 +14,7 @@ class Cards extends PositionComponent with DragCallbacks, TapCallbacks {
   List<Cards> otherCards = [];
 
   @override
-  bool debugMode = true;
+  bool debugMode = kDebugMode;
 
   var isDraggable;
 

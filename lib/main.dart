@@ -1,15 +1,17 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flame/components.dart';
-import 'package:flame/events.dart';
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
-import 'package:flame/geometry.dart';
 import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
+import 'package:solitaire_game/game_components/background_main.dart';
+import 'package:solitaire_game/game_components/clickable_view.dart';
+import 'package:solitaire_game/game_components/alert_game_won.dart';
 
 import 'game_components/game_components.dart';
+
+const kDebugMode = false;
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +32,9 @@ class CardsGame extends FlameGame
   static late final Vector2 buttonSize;
 
   List<CardDetail> allCards = [];
+  List<CardDetail> stockCards = [];
+  List<Cards> wasteCards = [];
+
 
   late List<Pile> piles;
   late List<Foundation> foundations;
@@ -53,47 +58,11 @@ class CardsGame extends FlameGame
     gapInVerticalCards = size.toRect().size.height * .03;
 
     await Flame.images.load('cards-sprites.png');
+    await Flame.images.load('reload.png');
 
-    final stock = Stock()
-      ..size = cardSize
-      ..position = positionForStockCards();
-    final waste = Waste()
-      ..size = cardSize
-      ..position = positionForWasteCards();
-    foundations = List.generate(
-      4,
-      (index) => Foundation()
-        ..size = cardSize
-        ..position =
-            Vector2((index + 3) * (cardWidth + cardGap) + cardGap, cardGap),
-    );
-
-    piles = List.generate(
-      7,
-      (i) => Pile()
-        ..pileNumber = i
-        ..size = cardSize
-        ..position = Vector2(
-          cardGap + i * (cardWidth + cardGap),
-          cardHeight + 3 * cardGap,
-        ),
-    );
-
-    add(stock);
-    addAll(piles);
-    addAll(foundations);
-    add(waste);
-
-    _addButtonToRefillStock();
-    _generateCards();
-    _attachInitialCards();
-    _addTopCardToStock();
-
+    initiateGame();
 
   }
-
-  List<CardDetail> stock = [];
-  List<Cards> waste = [];
 
   void _generateCards() {
     for (int suit = 0; suit < 4; suit++) {
@@ -109,14 +78,14 @@ class CardsGame extends FlameGame
     card.onTap = null;
     card.isDraggable = true;
     card.setFaceUp(true);
-    if(stock.isNotEmpty) stock.removeLast();
-    waste.add(card);
+    if(stockCards.isNotEmpty) stockCards.removeLast();
+    wasteCards.add(card);
     _addTopCardToStock();
   }
 
   void _addTopCardToStock({bool addToo = true}) {
-    if (stock.isNotEmpty) {
-      CardDetail cardDetail = stock.last;
+    if (stockCards.isNotEmpty) {
+      CardDetail cardDetail = stockCards.last;
 
       Cards card = _createCardsByDetail(cardDetail);
       card.position = positionForStockCards();
@@ -133,15 +102,13 @@ class CardsGame extends FlameGame
   }
 
   void _moveCardsBackToStock() {
-    print("_moveCardsBackToStock ${stock.length}");
-    // reorderChildren();
-    for (var card in waste.reversed) {
-      stock.add(CardDetail(card.rank.value, card.suit.value));
+    for (var card in wasteCards.reversed) {
+      stockCards.add(CardDetail(card.rank.value, card.suit.value));
     }
-    for (var element in waste) {
+    for (var element in wasteCards) {
       element.removeFromParent();
     }
-    waste = [];
+    wasteCards = [];
     Future.delayed(const Duration(milliseconds: 100), () {
       _addTopCardToStock();
     });
@@ -304,7 +271,7 @@ class CardsGame extends FlameGame
   }
 
   void removeCardFromItsParentListHolder(Cards card) {
-    waste.remove(card);
+    wasteCards.remove(card);
     for (var pile in piles) {
       pile.cards.remove(card);
     }
@@ -363,7 +330,7 @@ class CardsGame extends FlameGame
     }
 
     //Add remaining cards to stock
-    stock.addAll(cards);
+    stockCards.addAll(cards);
   }
 
   Cards _createCardsByDetail(CardDetail cardDetail) {
@@ -388,7 +355,7 @@ class CardsGame extends FlameGame
       }
 
       // Set by waste or move to last pos
-      if (waste.contains(card)) {
+      if (wasteCards.contains(card)) {
         card.position = positionForWasteCards();
       } else {
         // move to its last pile
@@ -421,9 +388,67 @@ class CardsGame extends FlameGame
         return;
       }
     }
+    showWonAlert();
+  }
+  
+  void initiateGame() {
 
-    //TODO : Won, show button to restart the game
-    onGameWon?.call();
+    allCards = [];
+    stockCards = [];
+    wasteCards = [];
+
+    final stock = Stock()
+      ..size = cardSize
+      ..position = positionForStockCards();
+    final waste = Waste()
+      ..size = cardSize
+      ..position = positionForWasteCards();
+    foundations = List.generate(
+      4,
+      (index) => Foundation()
+        ..size = cardSize
+        ..position =
+            Vector2((index + 3) * (cardWidth + cardGap) + cardGap, cardGap),
+    );
+
+    piles = List.generate(
+      7,
+      (i) => Pile()
+        ..pileNumber = i
+        ..size = cardSize
+        ..position = Vector2(
+          cardGap + i * (cardWidth + cardGap),
+          cardHeight + 3 * cardGap,
+        ),
+    );
+
+    add(Background());
+    add(stock);
+    addAll(piles);
+    addAll(foundations);
+    add(waste);
+
+    _addButtonToRefillStock();
+    _generateCards();
+    _attachInitialCards();
+    _addTopCardToStock();
+
+  }
+  
+  void showWonAlert() {
+
+    // Show alert 
+    var sizeGameWonComponent =  Vector2(300, 150);
+    var alert = AlertGameWon()
+        ..size = sizeGameWonComponent
+        ..position = Vector2(
+          size.toRect().size.width/2 - sizeGameWonComponent.toSize().width/2, size.toRect().size.height/2 - sizeGameWonComponent.toSize().height/2,
+        )
+        ..onTap = (){
+          removeAll(children);
+          initiateGame();
+        };
+        add(FullScreenClickableView()..size = size..add(alert));
 
   }
 }
@@ -442,6 +467,14 @@ class CardDetail {
 Sprite cardsSprite(double x, double y, double width, double height) {
   return Sprite(
     Flame.images.fromCache('cards-sprites.png'),
+    srcPosition: Vector2(x, y),
+    srcSize: Vector2(width, height),
+  );
+}
+
+Sprite reloadSprite(double x, double y, double width, double height) {
+  return Sprite(
+    Flame.images.fromCache('reload.png'),
     srcPosition: Vector2(x, y),
     srcSize: Vector2(width, height),
   );

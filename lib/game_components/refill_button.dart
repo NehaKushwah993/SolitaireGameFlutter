@@ -1,22 +1,17 @@
-import 'dart:math';
-
 import 'package:flame/components.dart';
-import 'package:flame/experimental.dart';
 import 'package:flame/extensions.dart';
-import 'package:flame/input.dart';
 import 'package:flutter/material.dart' hide Draggable;
 import '../main.dart';
-import 'game_components.dart';
 
 class RefillButton extends PositionComponent {
   @override
-  bool debugMode = true;
+  bool debugMode = kDebugMode;
 
   RefillButton() : super();
 
   @override
   void render(Canvas canvas) {
-    _renderBack(canvas);
+    reloadSprite(0, 0, 32,32).render(canvas,);
   }
 
   static final RRect cardRect = RRect.fromRectAndRadius(
@@ -29,8 +24,4 @@ class RefillButton extends PositionComponent {
     ..style = PaintingStyle.stroke
     ..strokeWidth = 2;
 
-  void _renderBack(Canvas canvas) {
-    canvas.drawRRect(cardRect, backBackgroundPaint);
-    canvas.drawRRect(cardRect, backBorderPaint1);
-  }
 }
