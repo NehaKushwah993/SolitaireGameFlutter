@@ -1,15 +1,16 @@
 import 'dart:math';
 
 import 'package:flame/components.dart';
+import 'package:flame/events.dart';
 import 'package:flame/extensions.dart';
-import 'package:flame/input.dart';
-import 'package:flutter/material.dart' hide Draggable;
+import 'package:flutter/material.dart';
 import '../main.dart';
 import 'game_components.dart';
 
-class Cards extends PositionComponent with Draggable, Tappable {
+class Cards extends PositionComponent with DragCallbacks, TapCallbacks {
   Vector2? dragDeltaPosition;
   List<Vector2?> dragDeltaPositions = [];
+  //Cards attached below the current card
   List<Cards> otherCards = [];
 
   @override
@@ -230,34 +231,37 @@ class Cards extends PositionComponent with Draggable, Tappable {
   }
 
   @override
-  bool onDragStart(DragStartInfo info) {
-    if (!isDraggable) return true;
+  bool onDragStart(DragStartEvent info) {
+    super.onDragStart(info);
+    if (!isDraggable && isFaceUp) return true;
     onCardDragStart?.call();
+
+    // This allows you to control the order in which your components are rendered.
     int p = 100;
     priority = p;
     for (var element in otherCards) {
       element.priority = ++p;
     }
-    dragDeltaPosition = info.eventPosition.game - position;
+    dragDeltaPosition = position;
     otherCards.forEach((element) {
-      dragDeltaPositions.add(info.eventPosition.game - element.position);
+      dragDeltaPositions.add(element.position);
     });
     return false;
   }
 
   @override
-  bool onDragUpdate(DragUpdateInfo event) {
-    if (!isDraggable) return true;
+  bool onDragUpdate(DragUpdateEvent event) {
+    if (!isDraggable || !isFaceUp) return true;
     final dragDeltaPosition = this.dragDeltaPosition;
     if (dragDeltaPosition == null) {
       return false;
     }
 
-    position.setFrom(event.eventPosition.game - dragDeltaPosition);
+    position += event.localDelta;
     for (int i = 0; i < otherCards.length; i++) {
+
       otherCards[i]
-          .position
-          .setFrom(event.eventPosition.game - dragDeltaPositions[i]!);
+          .position+= event.localDelta;
     }
 
     return false;
@@ -265,7 +269,8 @@ class Cards extends PositionComponent with Draggable, Tappable {
 
   @override
   bool onDragEnd(_) {
-    if (!isDraggable) return true;
+    super.onDragEnd(_);
+    // all cards on same level
     priority = 0;
     for (var element in otherCards) {
       element.priority = 0;
@@ -277,8 +282,8 @@ class Cards extends PositionComponent with Draggable, Tappable {
   }
 
   @override
-  bool onDragCancel() {
-    if (!isDraggable) return true;
+  bool onDragCancel(_) {
+    super.onDragCancel(_);
     priority = 0;
     for (var element in otherCards) {
       element.priority = 0;
@@ -295,20 +300,23 @@ class Cards extends PositionComponent with Draggable, Tappable {
   }
 
   @override
-  bool onTapUp(TapUpInfo info) {
+  bool onTapUp(TapUpEvent _) {
+    super.onTapUp(_);
     return true;
   }
 
   @override
-  bool onTapDown(TapDownInfo details) {
+  bool onTapDown(TapDownEvent _) {
+    super.onTapDown(_);
     print("onTapDown" + toString());
     onTap?.call();
     return false;
   }
 
   @override
-  bool onTapCancel() {
-    print("onTapDown" + toString());
+  bool onTapCancel(_) {
+    super.onTapCancel(_);
+    print("onTapCancel" + toString());
     return false;
   }
 }

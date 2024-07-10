@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flame/components.dart';
+import 'package:flame/events.dart';
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
+import 'package:flame/geometry.dart';
 import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
 
@@ -13,11 +16,12 @@ void main() {
 
   Flame.device.setLandscape();
 
-  runApp(GameWidget(game: CardsGame()));
+  var game = CardsGame();
+  runApp(GameWidget(game: game));
 }
 
 class CardsGame extends FlameGame
-    with HasDraggables, HasCollisionDetection, HasTappables {
+    with HasCollisionDetection {
   static double cardWidth = 90;
   static double cardHeight = 160;
   static double cardGap = 15;
@@ -33,6 +37,8 @@ class CardsGame extends FlameGame
   static double minHeightToAttachCardToPile = 70;
 
   double gapInVerticalCards = 40;
+
+  Function? onGameWon;
 
   Vector2 positionForStockCards() => Vector2(cardGap, cardGap);
 
@@ -82,6 +88,8 @@ class CardsGame extends FlameGame
     _generateCards();
     _attachInitialCards();
     _addTopCardToStock();
+
+
   }
 
   List<CardDetail> stock = [];
@@ -101,7 +109,7 @@ class CardsGame extends FlameGame
     card.onTap = null;
     card.isDraggable = true;
     card.setFaceUp(true);
-    stock.removeLast();
+    if(stock.isNotEmpty) stock.removeLast();
     waste.add(card);
     _addTopCardToStock();
   }
@@ -126,7 +134,7 @@ class CardsGame extends FlameGame
 
   void _moveCardsBackToStock() {
     print("_moveCardsBackToStock ${stock.length}");
-    reorderChildren();
+    // reorderChildren();
     for (var card in waste.reversed) {
       stock.add(CardDetail(card.rank.value, card.suit.value));
     }
@@ -391,6 +399,7 @@ class CardsGame extends FlameGame
           }
         }
       }
+
     };
 
     return card;
@@ -414,6 +423,8 @@ class CardsGame extends FlameGame
     }
 
     //TODO : Won, show button to restart the game
+    onGameWon?.call();
+
   }
 }
 
