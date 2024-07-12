@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:solitaire_game/game_components/background_main.dart';
 import 'package:solitaire_game/game_components/clickable_view.dart';
 import 'package:solitaire_game/game_components/alert_game_won.dart';
+import 'package:solitaire_game/game_components/menu.dart';
+import 'package:solitaire_game/utils/utils.dart';
 
 import 'game_components/game_components.dart';
 
@@ -17,14 +19,42 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
   Flame.device.setLandscape();
+  Flame.device.fullScreen();
 
-  var game = CardsGame();
-  runApp(GameWidget(game: game));
+  runApp(const MyAppWidget());
 }
 
-class CardsGame extends FlameGame
-    with HasCollisionDetection {
+class MyAppWidget extends StatelessWidget {
+  const MyAppWidget({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      home: Scaffold(
+        body: Stack(
+          children: [FlameLayer()],
+        ),
+      ),
+    );
+  }
+}
+
+class FlameLayer extends StatelessWidget {
+  const FlameLayer({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GameWidget(game: CardsGame(context));
+  }
+}
+
+class CardsGame extends FlameGame with HasCollisionDetection {
+  BuildContext context;
+
+  CardsGame(this.context);
+
   static double cardWidth = 90;
+  static double heightOfMenu = 40;
   static double cardHeight = 160;
   static double cardGap = 15;
   static double cardRadius = 5;
@@ -35,7 +65,6 @@ class CardsGame extends FlameGame
   List<Cards> stockCards = [];
   List<Cards> wasteCards = [];
 
-
   late List<Pile> piles;
   late List<Foundation> foundations;
 
@@ -45,9 +74,10 @@ class CardsGame extends FlameGame
 
   Function? onGameWon;
 
-  Vector2 positionForStockCards() => Vector2(cardGap, cardGap);
+  Vector2 positionForStockCards() => Vector2(cardGap, cardGap + heightOfMenu);
 
-  Vector2 positionForWasteCards() => Vector2(cardGap * 2 + cardWidth, cardGap);
+  Vector2 positionForWasteCards() =>
+      Vector2(cardGap * 2 + cardWidth, cardGap + heightOfMenu);
 
   @override
   Future<void>? onLoad() async {
@@ -61,7 +91,6 @@ class CardsGame extends FlameGame
     await Flame.images.load('reload.png');
 
     initiateGame();
-
   }
 
   void _generateCards() {
@@ -103,7 +132,7 @@ class CardsGame extends FlameGame
   }
 
   void _moveCardsBackToStock() {
-     for (var card in wasteCards.reversed) {
+    for (var card in wasteCards.reversed) {
       card.position = positionForStockCards();
       card.setFaceUp(false);
       card.isDraggable = false;
@@ -118,7 +147,7 @@ class CardsGame extends FlameGame
       add(card);
     }
 
-     wasteCards.clear();
+    wasteCards.clear();
   }
 
   void _addButtonToRefillStock() {
@@ -373,7 +402,6 @@ class CardsGame extends FlameGame
           }
         }
       }
-
     };
 
     return card;
@@ -387,19 +415,16 @@ class CardsGame extends FlameGame
     }
   }
 
-
-
   void _checkIfWon() {
     for (var foundation in foundations) {
-      if(foundation.cards.length != 13){
+      if (foundation.cards.length != 13) {
         return;
       }
     }
     showWonAlert();
   }
-  
-  void initiateGame() {
 
+  void initiateGame() {
     allCards = [];
     stockCards = [];
     wasteCards = [];
@@ -414,8 +439,8 @@ class CardsGame extends FlameGame
       4,
       (index) => Foundation()
         ..size = cardSize
-        ..position =
-            Vector2((index + 3) * (cardWidth + cardGap) + cardGap, cardGap),
+        ..position = Vector2((index + 3) * (cardWidth + cardGap) + cardGap,
+            cardGap + heightOfMenu),
     );
 
     piles = List.generate(
@@ -425,11 +450,27 @@ class CardsGame extends FlameGame
         ..size = cardSize
         ..position = Vector2(
           cardGap + i * (cardWidth + cardGap),
-          cardHeight + 3 * cardGap,
+          (cardHeight + 3 * cardGap) + heightOfMenu,
         ),
     );
 
     add(Background());
+    add(
+      Menu(
+        size: Vector2(size.x, heightOfMenu),
+        onNewGame: () {
+          showAlertDialog(
+            context,
+            title: "Start new game",
+            message: 'Do you want to start new game',
+            okButtonTitle: "Yes",
+            onTap: () {
+              resetGame();
+            },
+          );
+        },
+      ),
+    );
     add(stock);
     addAll(piles);
     addAll(foundations);
@@ -438,24 +479,30 @@ class CardsGame extends FlameGame
     _addButtonToRefillStock();
     _generateCards();
     _attachInitialCards();
-
   }
-  
+
+  resetGame() {
+    removeAll(children);
+    initiateGame();
+  }
+
   void showWonAlert() {
-
-    // Show alert 
-    var sizeGameWonComponent =  Vector2(300, 150);
+    // Show alert
+    var sizeGameWonComponent = Vector2(300, 150);
     var alert = AlertGameWon()
-        ..size = sizeGameWonComponent
-        ..position = Vector2(
-          size.toRect().size.width/2 - sizeGameWonComponent.toSize().width/2, size.toRect().size.height/2 - sizeGameWonComponent.toSize().height/2,
-        )
-        ..onTap = (){
-          removeAll(children);
-          initiateGame();
-        };
-        add(FullScreenClickableView()..size = size..add(alert));
-
+      ..size = sizeGameWonComponent
+      ..position = Vector2(
+        size.toRect().size.width / 2 - sizeGameWonComponent.toSize().width / 2,
+        size.toRect().size.height / 2 -
+            sizeGameWonComponent.toSize().height / 2,
+      )
+      ..onTap = () {
+        removeAll(children);
+        initiateGame();
+      };
+    add(FullScreenClickableView()
+      ..size = size
+      ..add(alert));
   }
 }
 
