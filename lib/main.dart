@@ -32,7 +32,7 @@ class CardsGame extends FlameGame
   static late final Vector2 buttonSize;
 
   List<CardDetail> allCards = [];
-  List<CardDetail> stockCards = [];
+  List<Cards> stockCards = [];
   List<Cards> wasteCards = [];
 
 
@@ -78,15 +78,17 @@ class CardsGame extends FlameGame
     card.onTap = null;
     card.isDraggable = true;
     card.setFaceUp(true);
-    if(stockCards.isNotEmpty) stockCards.removeLast();
+
+    stockCards.remove(card);
     wasteCards.add(card);
-    _addTopCardToStock();
+
+    /** to add card on top layer */
+    card.removeFromParent();
+    add(card);
   }
 
-  void _addTopCardToStock({bool addToo = true}) {
-    if (stockCards.isNotEmpty) {
-      CardDetail cardDetail = stockCards.last;
-
+  void _addCardsToStockContainer(List<CardDetail> cardDetails) {
+    for (var cardDetail in cardDetails) {
       Cards card = _createCardsByDetail(cardDetail);
       card.position = positionForStockCards();
       card.setFaceUp(false);
@@ -95,23 +97,28 @@ class CardsGame extends FlameGame
         moveFromStockToWaste(card);
       };
 
-      if (addToo) {
-        add(card);
-      }
+      stockCards.add(card);
+      add(card);
     }
   }
 
   void _moveCardsBackToStock() {
-    for (var card in wasteCards.reversed) {
-      stockCards.add(CardDetail(card.rank.value, card.suit.value));
+     for (var card in wasteCards.reversed) {
+      card.position = positionForStockCards();
+      card.setFaceUp(false);
+      card.isDraggable = false;
+      card.onTap = () {
+        moveFromStockToWaste(card);
+      };
+
+      stockCards.add(card);
+
+      /** to add them on ui is order */
+      card.removeFromParent();
+      add(card);
     }
-    for (var element in wasteCards) {
-      element.removeFromParent();
-    }
-    wasteCards = [];
-    Future.delayed(const Duration(milliseconds: 100), () {
-      _addTopCardToStock();
-    });
+
+     wasteCards.clear();
   }
 
   void _addButtonToRefillStock() {
@@ -330,7 +337,7 @@ class CardsGame extends FlameGame
     }
 
     //Add remaining cards to stock
-    stockCards.addAll(cards);
+    _addCardsToStockContainer(cards);
   }
 
   Cards _createCardsByDetail(CardDetail cardDetail) {
@@ -431,7 +438,6 @@ class CardsGame extends FlameGame
     _addButtonToRefillStock();
     _generateCards();
     _attachInitialCards();
-    _addTopCardToStock();
 
   }
   
