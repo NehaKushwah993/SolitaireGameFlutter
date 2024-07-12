@@ -6,8 +6,6 @@ import 'package:flame/game.dart';
 import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
 import 'package:solitaire_game/game_components/background_main.dart';
-import 'package:solitaire_game/game_components/clickable_view.dart';
-import 'package:solitaire_game/game_components/alert_game_won.dart';
 import 'package:solitaire_game/game_components/menu.dart';
 import 'package:solitaire_game/utils/utils.dart';
 
@@ -32,7 +30,9 @@ class MyAppWidget extends StatelessWidget {
     return const MaterialApp(
       home: Scaffold(
         body: Stack(
-          children: [FlameLayer()],
+          children: [
+            FlameLayer(),
+          ],
         ),
       ),
     );
@@ -488,21 +488,10 @@ class CardsGame extends FlameGame with HasCollisionDetection {
 
   void showWonAlert() {
     // Show alert
-    var sizeGameWonComponent = Vector2(300, 150);
-    var alert = AlertGameWon()
-      ..size = sizeGameWonComponent
-      ..position = Vector2(
-        size.toRect().size.width / 2 - sizeGameWonComponent.toSize().width / 2,
-        size.toRect().size.height / 2 -
-            sizeGameWonComponent.toSize().height / 2,
-      )
-      ..onTap = () {
-        removeAll(children);
-        initiateGame();
-      };
-    add(FullScreenClickableView()
-      ..size = size
-      ..add(alert));
+    showGameWonAlert(context, onProceed: () {
+      removeAll(children);
+      initiateGame();
+    });
   }
 }
 
