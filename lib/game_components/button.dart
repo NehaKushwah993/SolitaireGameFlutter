@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 
 class Button extends PositionComponent with TapCallbacks {
   Function? onTap;
+  String text;
 
-  Button({this.onTap});
+  Button({required this.text, this.onTap});
 
   @override
   void onTapUp(TapUpEvent event) {
@@ -19,8 +20,8 @@ class Button extends PositionComponent with TapCallbacks {
       color: Colors.white,
       fontSize: 16,
     );
-    const textSpan = TextSpan(
-      text: 'New game',
+    var textSpan = TextSpan(
+      text: text,
       style: textStyle,
     );
     final textPainter = TextPainter(
