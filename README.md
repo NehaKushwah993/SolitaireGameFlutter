@@ -12,3 +12,8 @@ In this program, everythoing is made using sprite or custom draw.
 
 https://github.com/user-attachments/assets/3c71ea62-ebb2-4b9a-8fe3-6097ea90bc25
 
+
+Tags : 
+"How to develop game in flutter"
+"Sample project for flutter game"
+"Sample project for flutter flame game"
