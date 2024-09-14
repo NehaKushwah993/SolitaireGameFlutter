@@ -4,14 +4,16 @@ import 'package:flame/components.dart';
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:solitaire_game/game_components/background_main.dart';
 import 'package:solitaire_game/game_components/menu.dart';
 import 'package:solitaire_game/utils/utils.dart';
 
+import 'game_components/card_details.dart';
 import 'game_components/game_components.dart';
 
-const kDebugMode = false;
+const isDebugMode = kDebugMode;
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -492,17 +494,6 @@ class CardsGame extends FlameGame with HasCollisionDetection {
       removeAll(children);
       initiateGame();
     });
-  }
-}
-
-class CardDetail {
-  int suit = 0, rank = 0;
-
-  CardDetail(this.rank, this.suit);
-
-  @override
-  String toString() {
-    return "-" + suit.toString() + "-" + rank.toString();
   }
 }
 

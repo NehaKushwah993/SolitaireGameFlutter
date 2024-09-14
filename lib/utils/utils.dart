@@ -10,25 +10,29 @@ showGameWonAlert(BuildContext context, {required Function() onProceed}) {
       return Stack(children: [
         const Align(alignment: Alignment.center, child: Confetti()),
         Container(
-          color: Colors.black.withAlpha(155),
+          color: const Color.fromARGB(230, 4, 4, 4).withAlpha(155),
           child: Align(
-              alignment: Alignment.center,
-              child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Congrataulations!!! You won!!!",
-                      style: TextStyle(fontSize: 30, color: Colors.white),
-                    ),
-                    TextButton(
-                        onPressed: () {
-                          onProceed.call();
-                        },
-                        child: const Text(
-                          "CLick here to start new game",
-                          style: TextStyle(fontSize: 20, color: Colors.blue),
-                        ))
-                  ])),
+            alignment: Alignment.center,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  "Congrataulations!!! You won!!!",
+                  style: TextStyle(fontSize: 30, color: Colors.white),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    onProceed.call();
+                  },
+                  child: const Text(
+                    "Click here to start new game",
+                    style: TextStyle(fontSize: 20, color: Colors.blue),
+                  ),
+                )
+              ],
+            ),
+          ),
         ),
       ]);
     },
@@ -74,7 +78,7 @@ showAlertDialog(BuildContext context,
     builder: (BuildContext context) {
       return Stack(
         children: [
-         const Align(alignment: Alignment.center, child: Confetti()),
+          const Align(alignment: Alignment.center, child: Confetti()),
           alert,
         ],
       );

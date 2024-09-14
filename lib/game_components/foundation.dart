@@ -9,13 +9,12 @@ class Foundation extends PositionComponent {
   int foundationNumber = 0;
 
   @override
-  bool get debugMode => kDebugMode;
+  bool get debugMode => isDebugMode;
 
   List<Cards> cards = [];
 
   @override
   void render(Canvas canvas) {
-
     Paint blackBorderPaint = Paint()
       ..color = const Color(0xff7ab2e8)
       ..style = PaintingStyle.stroke
