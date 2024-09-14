@@ -4,6 +4,7 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/extensions.dart';
 import 'package:flutter/material.dart';
+import 'package:solitaire_game/constants.dart';
 import '../main.dart';
 import 'game_components.dart';
 
@@ -14,9 +15,9 @@ class Cards extends PositionComponent with DragCallbacks, TapCallbacks {
   List<Cards> otherCards = [];
 
   @override
-  bool debugMode = kDebugMode;
+  bool debugMode = isDebugMode;
 
-  var isDraggable;
+  var isDraggable = true;
 
   Function? onTap;
   Function? attachToPileOrFoundation;
@@ -72,7 +73,7 @@ class Cards extends PositionComponent with DragCallbacks, TapCallbacks {
     ..strokeWidth = 3;
   static late final Sprite flameSprite = cardsSprite(1367, 6, 357, 501);
   static final Paint frontBackgroundPaint = Paint()
-    ..color = const Color(0xff000000);
+    ..color = Constants.frontBgColorForCard;
   static final Paint redBorderPaint = Paint()
     ..color = const Color(0xffece8a3)
     ..style = PaintingStyle.stroke
@@ -84,17 +85,17 @@ class Cards extends PositionComponent with DragCallbacks, TapCallbacks {
   static late final Sprite redJack = cardsSprite(81, 565, 562, 488);
   static late final Sprite redQueen = cardsSprite(717, 541, 486, 515);
   static late final Sprite redKing = cardsSprite(1305, 532, 407, 549);
-  static final blueFilter = Paint()
+  static final blackCardFilter = Paint()
     ..colorFilter = const ColorFilter.mode(
-      Color(0x880d8bff),
+      Constants.backCardOverlayFilterColor,
       BlendMode.srcATop,
     );
   static late final Sprite blackJack = cardsSprite(81, 565, 562, 488)
-    ..paint = blueFilter;
+    ..paint = blackCardFilter;
   static late final Sprite blackQueen = cardsSprite(717, 541, 486, 515)
-    ..paint = blueFilter;
+    ..paint = blackCardFilter;
   static late final Sprite blackKing = cardsSprite(1305, 532, 407, 549)
-    ..paint = blueFilter;
+    ..paint = blackCardFilter;
 
   void _renderFront(Canvas canvas) {
     canvas.drawRRect(cardRect, frontBackgroundPaint);
@@ -106,12 +107,12 @@ class Cards extends PositionComponent with DragCallbacks, TapCallbacks {
     final rankOfSprite = suit.isBlack ? rank.blackSprite : rank.redSprite;
     final suitSprite = suit.sprite;
     _drawSprite(canvas, rankOfSprite, 0.1, 0.08);
-    _drawSprite(canvas, suitSprite, 0.1, 0.18, scale: 0.5);
+    _drawSprite(canvas, suitSprite, 0.1, 0.18);
     _drawSprite(canvas, rankOfSprite, 0.1, 0.08, rotate: true);
-    _drawSprite(canvas, suitSprite, 0.1, 0.18, scale: 0.5, rotate: true);
+    _drawSprite(canvas, suitSprite, 0.1, 0.18, rotate: true);
     switch (rank.value) {
       case 1:
-        _drawSprite(canvas, suitSprite, 0.5, 0.5, scale: 2.5);
+        _drawSprite(canvas, suitSprite, 0.5, 0.5, scale: 0.1);
         break;
       case 2:
         _drawSprite(canvas, suitSprite, 0.5, 0.25);
@@ -186,13 +187,16 @@ class Cards extends PositionComponent with DragCallbacks, TapCallbacks {
         _drawSprite(canvas, suitSprite, 0.7, 0.4, rotate: true);
         break;
       case 11:
-        _drawSprite(canvas, suit.isRed ? redJack : blackJack, 0.5, 0.5);
+        _drawSprite(canvas, suit.isRed ? redJack : blackJack, 0.5, 0.5,
+            scale: 0.2);
         break;
       case 12:
-        _drawSprite(canvas, suit.isRed ? redQueen : blackQueen, 0.5, 0.5);
+        _drawSprite(canvas, suit.isRed ? redQueen : blackQueen, 0.5, 0.5,
+            scale: 0.2);
         break;
       case 13:
-        _drawSprite(canvas, suit.isRed ? redKing : blackKing, 0.5, 0.5);
+        _drawSprite(canvas, suit.isRed ? redKing : blackKing, 0.5, 0.5,
+            scale: 0.2);
         break;
     }
   }
@@ -202,7 +206,7 @@ class Cards extends PositionComponent with DragCallbacks, TapCallbacks {
     canvas.drawRRect(cardRect, backBorderPaint1);
     canvas.drawRRect(innerRect, backBorderPaint2);
     flameSprite.render(canvas,
-        position: size / 2, anchor: Anchor.center, size: Vector2(10, 10));
+        position: size / 2, anchor: Anchor.center, size: Vector2(40, 40));
   }
 
   void _drawSprite(
@@ -210,7 +214,7 @@ class Cards extends PositionComponent with DragCallbacks, TapCallbacks {
     Sprite sprite,
     double relativeX,
     double relativeY, {
-    double scale = 1,
+    double scale = 0.1,
     bool rotate = false,
   }) {
     if (rotate) {
@@ -223,7 +227,7 @@ class Cards extends PositionComponent with DragCallbacks, TapCallbacks {
       canvas,
       position: Vector2(relativeX * size.x, relativeY * size.y),
       anchor: Anchor.center,
-      size: sprite.srcSize.scaled(0.1),
+      size: sprite.srcSize.scaled(scale),
     );
     if (rotate) {
       canvas.restore();
@@ -231,8 +235,8 @@ class Cards extends PositionComponent with DragCallbacks, TapCallbacks {
   }
 
   @override
-  bool onDragStart(DragStartEvent info) {
-    super.onDragStart(info);
+  bool onDragStart(DragStartEvent event) {
+    super.onDragStart(event);
     if (!isDraggable && isFaceUp) return true;
     onCardDragStart?.call();
 
@@ -243,9 +247,9 @@ class Cards extends PositionComponent with DragCallbacks, TapCallbacks {
       element.priority = ++p;
     }
     dragDeltaPosition = position;
-    otherCards.forEach((element) {
+    for (var element in otherCards) {
       dragDeltaPositions.add(element.position);
-    });
+    }
     return false;
   }
 
@@ -259,9 +263,7 @@ class Cards extends PositionComponent with DragCallbacks, TapCallbacks {
 
     position += event.localDelta;
     for (int i = 0; i < otherCards.length; i++) {
-
-      otherCards[i]
-          .position+= event.localDelta;
+      otherCards[i].position += event.localDelta;
     }
 
     return false;
@@ -308,7 +310,7 @@ class Cards extends PositionComponent with DragCallbacks, TapCallbacks {
   @override
   bool onTapDown(TapDownEvent _) {
     super.onTapDown(_);
-    print("onTapDown" + toString());
+    if (debugMode) print("onTapDown" + toString());
     onTap?.call();
     return false;
   }
@@ -316,7 +318,7 @@ class Cards extends PositionComponent with DragCallbacks, TapCallbacks {
   @override
   bool onTapCancel(_) {
     super.onTapCancel(_);
-    print("onTapCancel" + toString());
+    if (debugMode) print("onTapCancel" + toString());
     return false;
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flame/components.dart';
+import 'package:solitaire_game/constants.dart';
 import 'package:solitaire_game/main.dart';
 
 import 'card_for_game.dart';
@@ -9,7 +10,7 @@ class Pile extends PositionComponent {
   int pileNumber = 0;
 
   @override
-  bool get debugMode => kDebugMode;
+  bool get debugMode => isDebugMode;
 
   List<Cards> cards = [];
 
@@ -20,12 +21,19 @@ class Pile extends PositionComponent {
 
   @override
   void render(Canvas canvas) {
-
     Paint blackBorderPaint = Paint()
-      ..color = Color.fromARGB(255, 141, 141, 141)
+      ..color = Constants.pileBorderColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
-    canvas.drawRect(Rect.fromLTRB(0, 0, size.x, size.y), blackBorderPaint);
+
+    Rect rect = Rect.fromLTRB(0, 0, size.x, size.y);
+
+    var pile =
+        RRect.fromRectAndRadius(rect, Radius.circular(CardsGame.cardRadius));
+    canvas.drawRRect(
+      pile,
+      blackBorderPaint,
+    );
     super.render(canvas);
   }
 }

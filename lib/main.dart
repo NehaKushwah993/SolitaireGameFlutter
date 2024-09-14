@@ -4,16 +4,17 @@ import 'package:flame/components.dart';
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:solitaire_game/game_components/background_main.dart';
-import 'package:solitaire_game/game_components/clickable_view.dart';
-import 'package:solitaire_game/game_components/alert_game_won.dart';
 import 'package:solitaire_game/game_components/menu.dart';
 import 'package:solitaire_game/utils/utils.dart';
+import 'package:solitaire_game/widgets/footer.dart';
 
+import 'game_components/card_details.dart';
 import 'game_components/game_components.dart';
 
-const kDebugMode = false;
+const isDebugMode = kDebugMode;
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +33,14 @@ class MyAppWidget extends StatelessWidget {
     return const MaterialApp(
       home: Scaffold(
         body: Stack(
-          children: [FlameLayer()],
+          children: [
+            Column(
+              children: [
+                Expanded(child: FlameLayer()),
+                Footer(),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -471,6 +479,7 @@ class CardsGame extends FlameGame with HasCollisionDetection {
         },
       ),
     );
+
     add(stock);
     addAll(piles);
     addAll(foundations);
@@ -488,32 +497,10 @@ class CardsGame extends FlameGame with HasCollisionDetection {
 
   void showWonAlert() {
     // Show alert
-    var sizeGameWonComponent = Vector2(300, 150);
-    var alert = AlertGameWon()
-      ..size = sizeGameWonComponent
-      ..position = Vector2(
-        size.toRect().size.width / 2 - sizeGameWonComponent.toSize().width / 2,
-        size.toRect().size.height / 2 -
-            sizeGameWonComponent.toSize().height / 2,
-      )
-      ..onTap = () {
-        removeAll(children);
-        initiateGame();
-      };
-    add(FullScreenClickableView()
-      ..size = size
-      ..add(alert));
-  }
-}
-
-class CardDetail {
-  int suit = 0, rank = 0;
-
-  CardDetail(this.rank, this.suit);
-
-  @override
-  String toString() {
-    return "-" + suit.toString() + "-" + rank.toString();
+    showGameWonAlert(context, onProceed: () {
+      removeAll(children);
+      initiateGame();
+    });
   }
 }
 

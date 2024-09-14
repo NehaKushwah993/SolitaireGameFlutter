@@ -21,9 +21,11 @@ class Menu extends PositionComponent {
     final xCenter = (size.toRect().size.width - widthOfButton) - paddingRight;
     final yCenter = (size.toRect().size.height - heightOfButton) / 2;
 
-    var newGameButton = Button(text: "New Game", onTap: () {
-      onNewGame?.call();
-    });
+    var newGameButton = Button(
+        text: "New Game",
+        onTap: () {
+          onNewGame?.call();
+        });
 
     newGameButton.width = widthOfButton;
     newGameButton.height = heightOfButton;
