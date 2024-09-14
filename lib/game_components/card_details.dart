@@ -1,6 +1,3 @@
-import 'package:flame/components.dart';
-import 'package:flame/flame.dart';
-
 class CardDetail {
   int suit = 0, rank = 0;
 

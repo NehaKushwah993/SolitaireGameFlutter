@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:solitaire_game/game_components/background_main.dart';
 import 'package:solitaire_game/game_components/menu.dart';
 import 'package:solitaire_game/utils/utils.dart';
+import 'package:solitaire_game/widgets/footer.dart';
 
 import 'game_components/card_details.dart';
 import 'game_components/game_components.dart';
@@ -33,7 +34,12 @@ class MyAppWidget extends StatelessWidget {
       home: Scaffold(
         body: Stack(
           children: [
-            FlameLayer(),
+            Column(
+              children: [
+                Expanded(child: FlameLayer()),
+                Footer(),
+              ],
+            ),
           ],
         ),
       ),
@@ -473,6 +479,7 @@ class CardsGame extends FlameGame with HasCollisionDetection {
         },
       ),
     );
+
     add(stock);
     addAll(piles);
     addAll(foundations);

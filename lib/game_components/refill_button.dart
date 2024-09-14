@@ -2,7 +2,6 @@ import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/flame.dart';
 import 'package:flutter/material.dart' hide Draggable;
-import 'package:solitaire_game/game_components/card_details.dart';
 import '../main.dart';
 
 class RefillButton extends PositionComponent {

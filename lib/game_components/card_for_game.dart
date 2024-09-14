@@ -17,7 +17,7 @@ class Cards extends PositionComponent with DragCallbacks, TapCallbacks {
   @override
   bool debugMode = isDebugMode;
 
-  var isDraggable;
+  var isDraggable = true;
 
   Function? onTap;
   Function? attachToPileOrFoundation;
@@ -235,8 +235,8 @@ class Cards extends PositionComponent with DragCallbacks, TapCallbacks {
   }
 
   @override
-  bool onDragStart(DragStartEvent info) {
-    super.onDragStart(info);
+  bool onDragStart(DragStartEvent event) {
+    super.onDragStart(event);
     if (!isDraggable && isFaceUp) return true;
     onCardDragStart?.call();
 
@@ -247,9 +247,9 @@ class Cards extends PositionComponent with DragCallbacks, TapCallbacks {
       element.priority = ++p;
     }
     dragDeltaPosition = position;
-    otherCards.forEach((element) {
+    for (var element in otherCards) {
       dragDeltaPositions.add(element.position);
-    });
+    }
     return false;
   }
 
@@ -310,7 +310,7 @@ class Cards extends PositionComponent with DragCallbacks, TapCallbacks {
   @override
   bool onTapDown(TapDownEvent _) {
     super.onTapDown(_);
-    print("onTapDown" + toString());
+    if (debugMode) print("onTapDown" + toString());
     onTap?.call();
     return false;
   }
@@ -318,7 +318,7 @@ class Cards extends PositionComponent with DragCallbacks, TapCallbacks {
   @override
   bool onTapCancel(_) {
     super.onTapCancel(_);
-    print("onTapCancel" + toString());
+    if (debugMode) print("onTapCancel" + toString());
     return false;
   }
 }
